@@ -50,30 +50,36 @@ export default function Navbar() {
             </motion.a>
           ))}
           {!loading && user ? (
-            <div className="ml-2 flex items-center gap-3">
-              <Link href="/dashboard" className="flex items-center gap-2">
-                {user.avatarUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={user.avatarUrl}
-                    alt={user.name ?? user.email}
-                    className="h-8 w-8 rounded-full border border-white/15 object-cover"
-                  />
-                ) : (
-                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#facc15] text-sm font-semibold text-black">
-                    {initialsOf(user)}
-                  </span>
-                )}
-                <span className="max-w-[10rem] truncate text-sm text-gray-200">
-                  {user.name ?? user.email}
-                </span>
-              </Link>
-              <button
-                onClick={() => logout().then(() => router.replace("/login"))}
-                className="inline-flex items-center justify-center rounded-full border border-white/10 bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/20"
+            <div className="group relative ml-2">
+              <Link
+                href="/dashboard"
+                aria-label="Open dashboard"
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-white text-sm font-semibold text-black shadow-sm transition group-hover:bg-gray-200"
               >
-                Logout
-              </button>
+                {initialsOf(user)}
+              </Link>
+
+              <div className="invisible absolute right-0 top-full z-50 pt-3 opacity-0 transition duration-200 group-hover:visible group-hover:opacity-100">
+                <div className="min-w-56 rounded-2xl border border-white/10 bg-black/95 p-3 shadow-2xl backdrop-blur-xl">
+                  <Link
+                    href="/dashboard"
+                    className="block rounded-xl px-3 py-2 transition hover:bg-white/10"
+                  >
+                    <span className="block max-w-48 truncate text-sm font-semibold text-white">
+                      {user.name ?? "EventiX member"}
+                    </span>
+                    <span className="mt-0.5 block max-w-48 truncate text-xs text-gray-500">
+                      {user.email}
+                    </span>
+                  </Link>
+                  <button
+                    onClick={() => logout().then(() => router.replace("/login"))}
+                    className="mt-2 flex w-full items-center justify-center rounded-full border border-white/10 bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/20"
+                  >
+                    Logout
+                  </button>
+                </div>
+              </div>
             </div>
           ) : (
             <motion.div whileHover={{ y: -2, scale: 1.02 }} transition={{ duration: 0.3, ease: "easeInOut" }} className="ml-2">

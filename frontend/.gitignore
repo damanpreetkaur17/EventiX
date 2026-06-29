@@ -4,13 +4,13 @@
 /node_modules
 /.pnp
 .pnp.*
-.yarn/*
+.yarn/* 
 !.yarn/patches
 !.yarn/plugins
 !.yarn/releases
 !.yarn/versions
 
-# testing
+# testing 
 /coverage
 
 # next.js

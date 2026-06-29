@@ -12,6 +12,8 @@ import {
 } from "react";
 import { authApi, type AuthUser } from "@/lib/api";
 
+export type { AuthUser };
+
 interface AuthContextValue {
   user: AuthUser | null;
   accessToken: string | null;

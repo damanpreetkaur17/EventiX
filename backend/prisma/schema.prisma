@@ -1,0 +1,52 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum AuthProvider {
+  CREDENTIALS
+  GOOGLE
+  GITHUB
+}
+
+model User {
+  id           String         @id @default(cuid())
+  email        String         @unique
+  name         String?
+  avatarUrl    String?
+  // Null for OAuth-only accounts that never set a password.
+  passwordHash String?
+  provider     AuthProvider   @default(CREDENTIALS)
+  // Provider-specific account id (e.g. Google "sub", GitHub numeric id).
+  providerId   String?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  refreshTokens RefreshToken[]
+
+  @@unique([provider, providerId])
+  @@index([email])
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  // SHA-256 hash of the issued refresh token; the raw token never hits the DB.
+  tokenHash String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}

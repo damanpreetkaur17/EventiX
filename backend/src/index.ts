@@ -3,6 +3,7 @@ import cookieParser from "cookie-parser";
 import cors from "cors";
 import { env } from "./env.js";
 import { authRouter } from "./auth/routes.js";
+import { eventsRouter } from "./events/routes.js";
 
 const app = express();
 
@@ -20,6 +21,7 @@ app.get("/health", (_req, res) => {
 });
 
 app.use("/api/auth", authRouter);
+app.use("/api/events", eventsRouter);
 
 app.use((_req, res) => {
   res.status(404).json({ error: "Not found" });

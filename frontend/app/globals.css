@@ -53,3 +53,59 @@ input,
 button {
   border: 1px solid transparent;
 }
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-feature-settings: "ss01" on, "ss02" on, "cv01" on;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+@keyframes marquee {
+  0% {
+    transform: translateX(0%);
+  }
+
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(calc(-50% - 1rem));
+  }
+}
+
+@keyframes marqueeReverse {
+  from {
+    transform: translateX(calc(-50% - 1rem));
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.animate-marquee,
+.animate-marquee-reverse {
+  display: flex;
+  gap: 2rem;
+  width: max-content;
+  will-change: transform;
+  animation-play-state: running;
+}
+
+.animate-marquee {
+  animation: marquee 35s linear infinite;
+}
+
+.animate-marquee-reverse {
+  animation: marqueeReverse 35s linear infinite;
+}

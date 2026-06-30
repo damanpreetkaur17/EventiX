@@ -8,7 +8,7 @@ import { useAuth, type AuthUser } from "@/app/providers/AuthProvider";
 
 const sidebarLinks = [
   { label: "Overview", href: "/dashboard" },
-  { label: "Events", href: "/dashboard/events" },
+  { label: "Events", href: "/events" },
   { label: "Clubs", href: "/dashboard/clubs" },
   { label: "Communities", href: "/dashboard/communities" },
   { label: "Calendar", href: "/dashboard/calendar" },

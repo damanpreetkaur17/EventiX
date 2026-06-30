@@ -19,34 +19,58 @@ enum AuthProvider {
 }
 
 model User {
-  id           String         @id @default(cuid())
-  email        String         @unique
+  id           String       @id @default(cuid())
+  email        String       @unique
   name         String?
   avatarUrl    String?
   // Null for OAuth-only accounts that never set a password.
   passwordHash String?
-  provider     AuthProvider   @default(CREDENTIALS)
+  provider     AuthProvider @default(CREDENTIALS)
   // Provider-specific account id (e.g. Google "sub", GitHub numeric id).
   providerId   String?
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
 
   refreshTokens RefreshToken[]
+  events        Event[]
 
   @@unique([provider, providerId])
   @@index([email])
 }
 
 model RefreshToken {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   // SHA-256 hash of the issued refresh token; the raw token never hits the DB.
-  tokenHash String   @unique
+  tokenHash String    @unique
   userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   expiresAt DateTime
   revokedAt DateTime?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 
   @@index([userId])
+}
+
+model Event {
+  id              String    @id @default(cuid())
+  title           String
+  description     String
+  category        String
+  location        String
+  organizerName   String
+  startAt         DateTime
+  endAt           DateTime?
+  capacity        Int?
+  registrationUrl String?
+  posterUrl       String?
+  posterPublicId  String?
+  createdById     String
+  createdBy       User      @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([startAt])
+  @@index([category])
+  @@index([createdById])
 }

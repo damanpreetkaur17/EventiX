@@ -52,6 +52,16 @@ export const env = {
       return Boolean(this.clientId && this.clientSecret);
     },
   },
+
+  cloudinary: {
+    cloudName: optional("CLOUDINARY_CLOUD_NAME"),
+    apiKey: optional("CLOUDINARY_API_KEY"),
+    apiSecret: optional("CLOUDINARY_API_SECRET"),
+    folder: optional("CLOUDINARY_EVENT_FOLDER", "eventix/events"),
+    get enabled() {
+      return Boolean(this.cloudName && this.apiKey && this.apiSecret);
+    },
+  },
 } as const;
 
 export type Env = typeof env;

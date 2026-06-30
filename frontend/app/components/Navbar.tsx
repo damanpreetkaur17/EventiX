@@ -7,7 +7,7 @@ import Link from "next/link";
 import { useAuth } from "../providers/AuthProvider";
 
 const LINKS = [
-  { label: "Events", href: "#events" },
+  { label: "Events", href: "/events" },
   { label: "Clubs", href: "#clubs" },
   { label: "Communities", href: "#communities" },
   { label: "Calendar", href: "#calendar" },
@@ -39,15 +39,15 @@ export default function Navbar() {
 
         <nav className="hidden items-center gap-6 md:flex">
           {LINKS.map((link) => (
-            <motion.a
+            <motion.div
               key={link.label}
-              href={link.href}
               whileHover={{ y: -2, scale: 1.02 }}
               transition={{ duration: 0.3, ease: "easeInOut" }}
-              className="text-sm text-gray-200 transition hover:text-white"
             >
-              {link.label}
-            </motion.a>
+              <Link href={link.href} className="text-sm text-gray-200 transition hover:text-white">
+                {link.label}
+              </Link>
+            </motion.div>
           ))}
           {!loading && user ? (
             <div className="group relative ml-2">
@@ -110,9 +110,14 @@ export default function Navbar() {
         <div className="mx-auto mt-3 max-w-7xl px-0 md:hidden">
           <div className="flex flex-col gap-2 rounded-[1.25rem] border border-white/10 bg-transparent p-4">
             {LINKS.map((link) => (
-              <a key={link.label} href={link.href} className="px-2 py-2 text-sm text-gray-200 transition hover:text-white">
+              <Link
+                key={link.label}
+                href={link.href}
+                onClick={() => setOpen(false)}
+                className="px-2 py-2 text-sm text-gray-200 transition hover:text-white"
+              >
                 {link.label}
-              </a>
+              </Link>
             ))}
             {!loading && user ? (
               <>

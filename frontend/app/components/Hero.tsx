@@ -56,7 +56,7 @@ export default function Hero() {
               className="mt-10 flex flex-wrap gap-4"
             >
               <motion.a
-                href="#events"
+                href="/events"
                 whileHover={{ scale: 1.03, y: -2 }}
                 transition={{ duration: 0.3, ease: "easeInOut" }}
                 className="inline-flex items-center justify-center rounded-full border border-white/15 bg-white px-6 py-3 text-sm font-semibold text-black transition"
@@ -65,7 +65,7 @@ export default function Hero() {
               </motion.a>
 
               <motion.a
-                href="#create"
+                href="/events#create"
                 whileHover={{ scale: 1.03, y: -2 }}
                 transition={{ duration: 0.3, ease: "easeInOut" }}
                 className="inline-flex items-center justify-center rounded-full border border-white/10 bg-white/10 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/15"

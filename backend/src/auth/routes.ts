@@ -49,8 +49,8 @@ authRouter.post("/register", async (req: Request, res: Response) => {
     res.status(400).json({ error: "A valid email is required" });
     return;
   }
-  if (typeof password !== "string" || password.length < 8) {
-    res.status(400).json({ error: "Password must be at least 8 characters" });
+  if (typeof password !== "string" || password.length < 6) {
+    res.status(400).json({ error: "Password must be at least 6 characters" });
     return;
   }
 

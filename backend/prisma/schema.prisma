@@ -23,11 +23,31 @@ model User {
   email        String       @unique
   name         String?
   avatarUrl    String?
-  // Null for OAuth-only accounts that never set a password.
   passwordHash String?
   provider     AuthProvider @default(CREDENTIALS)
-  // Provider-specific account id (e.g. Google "sub", GitHub numeric id).
   providerId   String?
+
+  // ---------- Profile ----------
+  username     String?      @unique
+  phone        String?
+  bio          String?
+
+  gender       String?
+  dateOfBirth  DateTime?
+
+  department   String?
+  course       String?
+  year         Int?
+  rollNumber   String?
+
+  github       String?
+  linkedin     String?
+  portfolio    String?
+  instagram    String?
+
+  skills        String[]
+  interests     String[]
+
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
 

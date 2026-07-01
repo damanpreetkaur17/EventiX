@@ -1,8 +1,10 @@
 "use client";
 
-import { useRef, useState, type ChangeEvent, type FormEvent } from "react";
+import { useRef, useState, useEffect, type ChangeEvent, type FormEvent } from "react";
 import DashboardShell from "../components/DashboardShell";
 import { useAuth, type AuthUser } from "@/app/providers/AuthProvider";
+import { useProfile } from "@/lib/profile";
+import type { ProfileData, UserProfile } from "@/lib/profile";
 
 /* ─── helpers ─────────────────────────────────────────────────────────────── */
 
@@ -169,19 +171,66 @@ function AvatarBlock({
 /* ─── main page ───────────────────────────────────────────────────────────── */
 
 export default function ProfilePage() {
-  const { user } = useAuth();
+  const { user, accessToken } = useAuth();
 
-  const [name, setName] = useState(user?.name ?? "");
+  // Basic info state
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+
+  // Profile data state (from new API)
+  const [profileData, setProfileData] = useState<ProfileData>({});
+  const [fullProfile, setFullProfile] = useState<UserProfile | null>(null);
+
+  // UI state
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Use the profile hook
+  const { profile, loading, fetchProfile, updateProfile, uploadAvatar } = useProfile(accessToken);
+
+  // Load profile on mount
+  useEffect(() => {
+    if (accessToken) {
+      fetchProfile();
+    }
+  }, [accessToken, fetchProfile]);
+
+  // Update form when profile is loaded
+  useEffect(() => {
+    if (profile) {
+      setFullProfile(profile);
+      setProfileData({
+        name: profile.name || "",
+        username: profile.username || "",
+        phone: profile.phone || "",
+        bio: profile.bio || "",
+        gender: profile.gender || "",
+        dateOfBirth: profile.dateOfBirth ? profile.dateOfBirth.split("T")[0] : "",
+        department: profile.department || "",
+        course: profile.course || "",
+        year: profile.year || undefined,
+        rollNumber: profile.rollNumber || "",
+        github: profile.github || "",
+        linkedin: profile.linkedin || "",
+        portfolio: profile.portfolio || "",
+        instagram: profile.instagram || "",
+        skills: profile.skills || [],
+        interests: profile.interests || [],
+      });
+      if (profile.avatarUrl) {
+        setAvatarPreview(profile.avatarUrl);
+      }
+    }
+  }, [profile]);
+
   function handleFile(file: File) {
-    setAvatarPreview(URL.createObjectURL(file));
+    const preview = URL.createObjectURL(file);
+    setAvatarPreview(preview);
+    // Upload avatar immediately
+    uploadAvatar(file);
   }
 
   async function handleSubmit(e: FormEvent) {
@@ -193,12 +242,62 @@ export default function ProfilePage() {
       return;
     }
 
+    if (!accessToken) {
+      setError("You are not signed in.");
+      return;
+    }
+
     setSaving(true);
-    await new Promise((r) => setTimeout(r, 900));
-    setSaving(false);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
+
+    try {
+      const updated = await updateProfile(profileData);
+      if (!updated) {
+        throw new Error("Profile update failed.");
+      }
+
+      setFullProfile(updated);
+      setProfileData({
+        name: updated.name || "",
+        username: updated.username || "",
+        phone: updated.phone || "",
+        bio: updated.bio || "",
+        gender: updated.gender || "",
+        dateOfBirth: updated.dateOfBirth ? updated.dateOfBirth.split("T")[0] : "",
+        department: updated.department || "",
+        course: updated.course || "",
+        rollNumber: updated.rollNumber || "",
+        github: updated.github || "",
+        linkedin: updated.linkedin || "",
+        portfolio: updated.portfolio || "",
+        instagram: updated.instagram || "",
+        skills: updated.skills || [],
+        interests: updated.interests || [],
+      });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to update profile";
+      setError(message);
+    } finally {
+      setSaving(false);
+    }
   }
+
+  const handleProfileInputChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setProfileData((prev) => ({
+      ...prev,
+      [name]: value === "" ? undefined : value,
+    }));
+  };
+
+  const handleNumberInputChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setProfileData((prev) => ({
+      ...prev,
+      [name]: value === "" ? undefined : parseInt(value, 10),
+    }));
+  };
 
   return (
     <DashboardShell
@@ -254,10 +353,10 @@ export default function ProfilePage() {
 
                 <div className="mt-6 grid gap-4">
                   <FieldRow
-                    id="display-name"
+                    id="name"
                     label="Display Name"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
+                    value={profileData.name ?? ""}
+                    onChange={handleProfileInputChange}
                     placeholder="Your full name"
                   />
                   <FieldRow
@@ -279,47 +378,200 @@ export default function ProfilePage() {
                 </div>
               </Card>
 
-              {/* Security */}
+              {/* Extended Profile - Education */}
               <Card>
-                <p className="text-xs uppercase tracking-[0.35em] text-white/45">Security</p>
-                <h3 className="mt-2 text-xl font-semibold text-white">Change Password</h3>
-                <p className="mt-1 text-sm text-white/40">
-                  Leave blank to keep your current password.
-                </p>
+                <p className="text-xs uppercase tracking-[0.35em] text-white/45">Education</p>
+                <h3 className="mt-2 text-xl font-semibold text-white">Academic Info</h3>
 
                 <div className="mt-6 grid gap-4">
                   <FieldRow
-                    id="current-password"
-                    label="Current Password"
-                    type="password"
-                    value={currentPassword}
-                    onChange={(e) => setCurrentPassword(e.target.value)}
-                    placeholder="••••••••"
-                    disabled={user.provider !== "local"}
-                    hint={
-                      user.provider !== "local"
-                        ? `Signed in via ${user.provider} — no password to change.`
-                        : undefined
-                    }
+                    id="department"
+                    label="Department"
+                    value={profileData.department ?? ""}
+                    onChange={handleProfileInputChange}
+                    placeholder="e.g., Computer Science"
                   />
                   <FieldRow
-                    id="new-password"
-                    label="New Password"
-                    type="password"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    placeholder="••••••••"
-                    disabled={user.provider !== "local"}
+                    id="course"
+                    label="Course"
+                    value={profileData.course ?? ""}
+                    onChange={handleProfileInputChange}
+                    placeholder="e.g., B.Tech"
                   />
                   <FieldRow
-                    id="confirm-password"
-                    label="Confirm New Password"
-                    type="password"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="••••••••"
-                    disabled={user.provider !== "local"}
+                    id="rollNumber"
+                    label="Roll Number"
+                    value={profileData.rollNumber ?? ""}
+                    onChange={handleProfileInputChange}
+                    placeholder="e.g., 2021A1PS001"
                   />
+                </div>
+              </Card>
+
+              {/* Extended Profile - Additional Info */}
+              <Card>
+                <p className="text-xs uppercase tracking-[0.35em] text-white/45">Additional</p>
+                <h3 className="mt-2 text-xl font-semibold text-white">More About You</h3>
+
+                <div className="mt-6 grid gap-4">
+                  <FieldRow
+                    id="username"
+                    label="Username"
+                    value={profileData.username ?? ""}
+                    onChange={handleProfileInputChange}
+                    placeholder="3-30 characters"
+                  />
+                  <FieldRow
+                    id="phone"
+                    label="Phone"
+                    type="tel"
+                    value={profileData.phone ?? ""}
+                    onChange={handleProfileInputChange}
+                    placeholder="+91 XXXXX XXXXX"
+                  />
+                  <FieldRow
+                    id="gender"
+                    label="Gender"
+                    value={profileData.gender ?? ""}
+                    onChange={handleProfileInputChange}
+                    placeholder="Your gender"
+                  />
+                  <FieldRow
+                    id="dateOfBirth"
+                    label="Date of Birth"
+                    type="date"
+                    value={profileData.dateOfBirth ?? ""}
+                    onChange={handleProfileInputChange}
+                  />
+                </div>
+              </Card>
+
+              {/* Extended Profile - Social Links */}
+              <Card>
+                <p className="text-xs uppercase tracking-[0.35em] text-white/45">Connect</p>
+                <h3 className="mt-2 text-xl font-semibold text-white">Social Links</h3>
+
+                <div className="mt-6 grid gap-4">
+                  <FieldRow
+                    id="github"
+                    label="GitHub"
+                    value={profileData.github ?? ""}
+                    onChange={handleProfileInputChange}
+                    placeholder="GitHub username"
+                  />
+                  <FieldRow
+                    id="linkedin"
+                    label="LinkedIn"
+                    type="url"
+                    value={profileData.linkedin ?? ""}
+                    onChange={handleProfileInputChange}
+                    placeholder="https://linkedin.com/in/..."
+                  />
+                  <FieldRow
+                    id="portfolio"
+                    label="Portfolio"
+                    type="url"
+                    value={profileData.portfolio ?? ""}
+                    onChange={handleProfileInputChange}
+                    placeholder="https://yourportfolio.com"
+                  />
+                  <FieldRow
+                    id="instagram"
+                    label="Instagram"
+                    type="url"
+                    value={profileData.instagram ?? ""}
+                    onChange={handleProfileInputChange}
+                    placeholder="https://instagram.com/..."
+                  />
+                </div>
+              </Card>
+            </div>
+
+            {/* Extended Profile - Bio and Skills */}
+            <div className="mt-6 grid gap-6 xl:grid-cols-2">
+              <Card>
+                <p className="text-xs uppercase tracking-[0.35em] text-white/45">About</p>
+                <h3 className="mt-2 text-xl font-semibold text-white">Bio</h3>
+
+                <div className="mt-6">
+                  <label htmlFor="bio" className="text-xs font-semibold uppercase tracking-[0.2em] text-white/50">
+                    Bio
+                  </label>
+                  <textarea
+                    id="bio"
+                    name="bio"
+                    value={profileData.bio ?? ""}
+                    onChange={handleProfileInputChange}
+                    placeholder="Tell us about yourself (max 500 characters)"
+                    rows={4}
+                    className="mt-2 w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder-white/25 outline-none transition-colors focus:border-white/30 focus:bg-white/[0.07]"
+                  />
+                  <p className="mt-2 text-xs text-white/35">
+                    {(profileData.bio || "").length}/500 characters
+                  </p>
+                </div>
+              </Card>
+
+              <Card>
+                <p className="text-xs uppercase tracking-[0.35em] text-white/45">Skills</p>
+                <h3 className="mt-2 text-xl font-semibold text-white">Your Skills</h3>
+
+                <div className="mt-6">
+                  <label htmlFor="skills" className="text-xs font-semibold uppercase tracking-[0.2em] text-white/50">
+                    Skills (comma-separated)
+                  </label>
+                  <input
+                    id="skills"
+                    name="skills"
+                    type="text"
+                    value={(profileData.skills || []).join(", ")}
+                    onChange={(e) => {
+                      const skills = e.target.value.split(",").map((s) => s.trim()).filter(Boolean);
+                      handleProfileInputChange({
+                        ...e,
+                        target: { ...e.target, name: "skills", value: skills.join(", ") },
+                      });
+                      setProfileData((prev) => ({ ...prev, skills }));
+                    }}
+                    placeholder="React, TypeScript, Node.js"
+                    className="mt-2 w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder-white/25 outline-none transition-colors focus:border-white/30 focus:bg-white/[0.07]"
+                  />
+                  <p className="mt-2 text-xs text-white/35">
+                    {(profileData.skills || []).length}/50 skills
+                  </p>
+                </div>
+              </Card>
+            </div>
+
+            {/* Interests */}
+            <div className="mt-6">
+              <Card>
+                <p className="text-xs uppercase tracking-[0.35em] text-white/45">Interests</p>
+                <h3 className="mt-2 text-xl font-semibold text-white">Your Interests</h3>
+
+                <div className="mt-6">
+                  <label htmlFor="interests" className="text-xs font-semibold uppercase tracking-[0.2em] text-white/50">
+                    Interests (comma-separated)
+                  </label>
+                  <input
+                    id="interests"
+                    name="interests"
+                    type="text"
+                    value={(profileData.interests || []).join(", ")}
+                    onChange={(e) => {
+                      const interests = e.target.value.split(",").map((s) => s.trim()).filter(Boolean);
+                      handleProfileInputChange({
+                        ...e,
+                        target: { ...e.target, name: "interests", value: interests.join(", ") },
+                      });
+                      setProfileData((prev) => ({ ...prev, interests }));
+                    }}
+                    placeholder="Web Development, AI, Open Source"
+                    className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder-white/25 outline-none transition-colors focus:border-white/30 focus:bg-white/[0.07]"
+                  />
+                  <p className="mt-2 text-xs text-white/35">
+                    {(profileData.interests || []).length}/50 interests
+                  </p>
                 </div>
               </Card>
             </div>
@@ -344,7 +596,10 @@ export default function ProfilePage() {
                 <button
                   type="button"
                   onClick={() => {
-                    setName(user.name ?? "");
+                    setProfileData((prev) => ({
+                      ...prev,
+                      name: user.name ?? "",
+                    }));
                     setCurrentPassword("");
                     setNewPassword("");
                     setConfirmPassword("");

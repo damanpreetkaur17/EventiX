@@ -200,10 +200,10 @@ function LoginInner() {
                 id="password"
                 type="password"
                 required
-                minLength={8}
+                minLength={6}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder={mode === "register" ? "At least 8 characters" : "••••••••"}
+                placeholder={mode === "register" ? "At least 6 characters" : "••••••••"}
                 autoComplete={mode === "login" ? "current-password" : "new-password"}
                 className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder-gray-500 outline-none transition focus:border-[#facc15]/60 focus:ring-2 focus:ring-[#facc15]/30"
               />
